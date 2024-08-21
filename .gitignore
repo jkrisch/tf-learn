@@ -1,0 +1,9 @@
+#state is updated with every tf apply command
+*.tfstate*
+
+#includes provider binary
+.terraform/
+
+
+#var files may contain sensitive data
+*.tfvars*
