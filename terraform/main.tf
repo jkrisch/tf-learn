@@ -11,6 +11,7 @@ variable "env_prefix" {}
 variable "my_ip" {}
 variable "instance_type" {}
 variable "public_key_location" {}
+variable "private_key_location" {}
 
 resource "aws_vpc" "myapp_vpc" {
     cidr_block = var.vpc_cidr_block
@@ -208,6 +209,49 @@ resource "aws_instance" "myapp-server" {
     
     #this flag guarantuees that the server is recreated everytime the script changed
     user_data_replace_on_change = true
+
+    #instead of using user_data you can also use a remote-exec provisioner
+    #the difference to user_data is instead of passing the data to aws
+    #provisioner connects to the vm using ssh (in this case) using terraform
+    #connection is specific to provisioner and is needed as terraform doesn't know how to connect to the vm even though it is defined here
+    connection {
+        type = "ssh"
+        host = self.public_ip
+        user = "ec2-user"
+        private_key = file(var.private_key_location)
+    }
+
+    #provisioner with commands in the tf file
+    /*provisioner "remote-exec" {
+        inline = []
+            "export ENV=dev",
+            "mkdir newdir" 
+        ]
+    }*/
+
+
+    #provisioner with commands in a file
+    #the file must exist on the server, so we need to scp it before we can run it
+    #for this we use the file-provisioner
+    /*provisioner "file"{
+        source = "entrypoint.sh"
+        destination = "/home/ec2-user/entrypoint-ec2.sh"
+
+    }
+    provisioner "remote-exec"{
+        inline=["/home/ec2-user/entrypoint-ec2.sh"]
+    }*/
+
+    #alternative of running script using remote-exec provisioner
+    provisioner "remote-exec"{
+        script="entrypoint.sh"
+    }
+
+    #the third provisioner is local-exec (so you run commands on your local machine - not the remote vm!)
+    provisioner "local-exec"{
+        command = "echo $self.public_ip} > output.txt"
+    }
+
 
     tags = {
         Name: "${var.env_prefix}-server"
