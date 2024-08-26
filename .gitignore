@@ -4,6 +4,7 @@
 #includes provider binary
 .terraform/
 
+start.tf
 
 #var files may contain sensitive data
 *.tfvars*
